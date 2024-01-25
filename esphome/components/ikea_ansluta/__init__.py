@@ -3,8 +3,7 @@ import esphome.config_validation as cv
 import esphome.automation as auto
 from esphome.const import CONF_ID, CONF_TRIGGER_ID, CONF_ADDRESS, CONF_DEBOUNCE
 from esphome.components import spi
-
-# from .automation import disable_pairing_mode_to_code # noqa
+from .automation import disable_pairing_mode_to_code  # noqa
 from .types import IkeaAnsluta, OnRemoteClickTrigger
 
 DEPENDENCIES = ["spi"]
