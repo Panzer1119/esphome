@@ -3,7 +3,7 @@
 #include "esphome/core/log.h"
 #include "esphome/core/automation.h"
 #include "ikea_ansluta.h"
-#include "light/light.h"
+#include "esphome/components/ikea_ansluta/light/light.h"
 
 namespace esphome {
 namespace ikea_ansluta {
