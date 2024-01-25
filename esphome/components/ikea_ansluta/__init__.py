@@ -9,6 +9,7 @@ from .types import IkeaAnsluta, OnRemoteClickTrigger
 
 DEPENDENCIES = ["spi"]
 CODEOWNERS = ["@Panzer1119"]
+AUTO_LOAD = ["light"]
 
 CONF_IKEA_ANSLUTA_ID = "ikea_ansluta_id"
 CONF_SEND_COMMAND_TIMES = "send_command_times"

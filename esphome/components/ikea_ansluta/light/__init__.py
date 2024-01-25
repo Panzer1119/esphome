@@ -8,6 +8,7 @@ from ..types import IkeaAnsluta
 from .. import CONF_IKEA_ANSLUTA_ID
 
 DEPENDENCIES = ["ikea_ansluta"]
+AUTO_LOAD = ["light"]
 
 CONF_PAIRING_MODE = "pairing_mode"
 CONF_ON_CHANGE = "on_change"
