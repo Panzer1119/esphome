@@ -1,0 +1,2 @@
+DEPENDENCIES = ["spi"]
+CODEOWNERS = ["@Panzer1119"]
