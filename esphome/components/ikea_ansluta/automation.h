@@ -2,7 +2,6 @@
 
 #include "esphome/core/log.h"
 #include "esphome/core/automation.h"
-#include "esphome/components/light/light_state.h"
 #include "ikea_ansluta.h"
 #include "light/light.h"
 
