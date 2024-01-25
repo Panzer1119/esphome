@@ -5,7 +5,7 @@ from esphome.const import CONF_ID, CONF_TRIGGER_ID, CONF_ADDRESS, CONF_DEBOUNCE
 from esphome.components import spi
 
 # from .automation import disable_pairing_mode_to_code  # noqa
-from .types import IkeaAnsluta
+from .types import IkeaAnsluta, OnRemoteClickTrigger
 
 DEPENDENCIES = ["spi"]
 CODEOWNERS = ["@Panzer1119"]
@@ -21,13 +21,13 @@ CONFIG_SCHEMA = (
             cv.GenerateID(): cv.declare_id(IkeaAnsluta),
             # cv.Optional(CONF_SEND_COMMAND_TIMES, default=75): cv.uint16_t,
             # cv.Optional(CONF_SNIFF_AFTER_COMMAND_SENT_X_TIMES, default=5): cv.uint16_t,
-            # cv.Optional(CONF_ON_REMOTE_CLICK): auto.validate_automation(
-            #     {
-            #         cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(OnRemoteClickTrigger),
-            #         cv.Optional(CONF_ADDRESS): cv.hex_uint16_t,
-            #         cv.Optional(CONF_DEBOUNCE, default=200): cv.uint16_t,
-            #     }
-            # ),
+            cv.Optional(CONF_ON_REMOTE_CLICK): auto.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(OnRemoteClickTrigger),
+                    cv.Optional(CONF_ADDRESS): cv.hex_uint16_t,
+                    cv.Optional(CONF_DEBOUNCE, default=200): cv.uint16_t,
+                }
+            ),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
