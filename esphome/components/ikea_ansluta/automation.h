@@ -3,6 +3,8 @@
 #include "esphome/core/log.h"
 #include "esphome/core/automation.h"
 #include "ikea_ansluta.h"
+#include "light/light.h"
+#include "esphome/components/light/light_state.h"
 
 namespace esphome {
 namespace ikea_ansluta {
@@ -30,5 +32,28 @@ class OnRemoteClickTrigger : public Trigger<uint16_t, uint8_t> {
   uint32_t last_trigger_{0};
 };
 
+template<typename... Ts> class EnablePairingModeAction : public Action<Ts...> {
+ public:
+  explicit EnablePairingModeAction(light::LightState *state) : light_state_(state) {}
+
+  void play(Ts... x) override {
+    ((ikea_ansluta::Light*) this->light_state_->get_output())->set_pairing_mode(true);
+  }
+
+ protected:
+  light::LightState *light_state_;
+};
+
+template<typename... Ts> class DisablePairingModeAction : public Action<Ts...> {
+ public:
+  explicit DisablePairingModeAction(light::LightState *state) : light_state_(state) {}
+
+  void play(Ts... x) override {
+    ((ikea_ansluta::Light*) this->light_state_->get_output())->set_pairing_mode(false);
+  }
+
+ protected:
+  light::LightState *light_state_;
+};
 }  // namespace ikea_ansluta
 }  // namespace esphome
