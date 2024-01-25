@@ -55,40 +55,36 @@ void IkeaAnsluta::setup() {
 void IkeaAnsluta::dump_config() {
   ESP_LOGCONFIG(TAG, "Ikea Ansluta:");
   LOG_PIN("  CS PIN:", this->cs_);
-//  if (this->send_command_times_.has_value())
-//    ESP_LOGCONFIG(TAG, "  Send command times: %d", this->send_command_times_.value());
-//  if (this->sniff_after_command_sent_x_times_.has_value())
-//    ESP_LOGCONFIG(TAG, "  Sniff after command sent X times: %d", this->sniff_after_command_sent_x_times_.value());
+  if (this->send_command_times_.has_value())
+    ESP_LOGCONFIG(TAG, "  Send command times: %d", this->send_command_times_.value());
+  if (this->sniff_after_command_sent_x_times_.has_value())
+    ESP_LOGCONFIG(TAG, "  Sniff after command sent X times: %d", this->sniff_after_command_sent_x_times_.value());
 }
 
 void IkeaAnsluta::loop() {
   this->enable();
+  // Sniffing slows down command sending. Therefore we only sniff if we are
+  // not sending commands or for after we have sent x commands
+  if (this->command_queue_.empty()) {
+    this->sniff_();
+  } else if (this->commands_sent_ % this->sniff_after_command_sent_x_times_.value_or(5) == 0) {
+    this->sniff_();
+    this->commands_sent_ = 0;
+  }
 
-  this->sniff_();
-
-//  // Sniffing slows down command sending. Therefore we only sniff if we are
-//  // not sending commands or for after we have sent x commands
-//  if (this->command_queue_.empty()) {
-//    this->sniff_();
-//  } else if (this->commands_sent_ % this->sniff_after_command_sent_x_times_.value_or(5) == 0) {
-//    this->sniff_();
-//    this->commands_sent_ = 0;
-//  }
-
-//  for (auto it = this->command_queue_.begin(); it != this->command_queue_.end();) {
-//    this->send_command_(it->first, it->second.command);
-//    it->second.times_sent++;
-//    this->commands_sent_++;
-//    if (it->second.times_sent == this->send_command_times_.value_or(50)) {
-//      ESP_LOGD(TAG, "Done sending command %#04x to address %#04x", (uint8_t) it->second.command, it->first);
-//      it = this->command_queue_.erase(it);
-//    } else {
-//      ++it;
-//    }
-//  }
+  for (auto it = this->command_queue_.begin(); it != this->command_queue_.end();) {
+    this->send_command_(it->first, it->second.command);
+    it->second.times_sent++;
+    this->commands_sent_++;
+    if (it->second.times_sent == this->send_command_times_.value_or(50)) {
+      ESP_LOGD(TAG, "Done sending command %#04x to address %#04x", (uint8_t) it->second.command, it->first);
+      it = this->command_queue_.erase(it);
+    } else {
+      ++it;
+    }
+  }
   this->disable();
 }
-
 
 void IkeaAnsluta::write_reg_(uint8_t address, uint8_t value) {
   this->cs_->digital_write(false);
@@ -131,7 +127,23 @@ void IkeaAnsluta::sniff_() {
   }
 }
 
-// IkeaAnsluta::queue_command(uint16_t address, Command command)
+void IkeaAnsluta::queue_command(uint16_t address, Command command) {
+  ESP_LOGV(TAG, "Queued command %#02x to address %#04x", address, (uint8_t) command);
+  if (!this->command_queue_.count(address)) {
+    auto pair = std::make_pair(address, SendingCommandState{
+        .command = command,
+        .times_sent = 0,
+    });
+
+    this->command_queue_.insert(pair);
+    return;
+  }
+
+  if (this->command_queue_[address].command != command) {
+    this->command_queue_[address].command = command;
+    this->command_queue_[address].times_sent = 0;
+  }
+}
 
 void IkeaAnsluta::read_packet_(std::vector<uint8_t> &buffer) {
   this->send_strobe_(CC2500_SRX);
@@ -158,7 +170,24 @@ bool IkeaAnsluta::valid_cmd_(Command cmd) {
          cmd == Command::PAIR;
 }
 
-// IkeaAnsluta::send_command_(uint16_t address, Command command)
+void IkeaAnsluta::send_command_(uint16_t address, Command command) {
+  this->send_strobe_(CC2500_SFTX);   // 0x3B
+  this->send_strobe_(CC2500_SIDLE);  // 0x36
+  this->cs_->digital_write(false);
+  delayMicroseconds(1);
+  this->write_byte(0x7F);
+  this->write_byte(0x06);
+  this->write_byte(0x55);
+  this->write_byte(0x01);
+  this->write_byte((uint8_t)(address >> 8));
+  this->write_byte((uint8_t)(address & 0xFF));
+  this->write_byte((uint8_t) command);
+  this->write_byte(0xAA);
+  this->write_byte(0xFF);
+  this->cs_->digital_write(true);
+  this->send_strobe_(CC2500_STX);
+  delayMicroseconds(10);
+}
 
 void IkeaAnsluta::add_on_remote_click_callback(std::function<void(uint16_t, uint8_t)> &&remote_pressed_callback) {
   this->on_remote_click_callback_.add(std::move(remote_pressed_callback));
